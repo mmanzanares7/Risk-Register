@@ -1,58 +1,84 @@
-# Risk Register and Vulnerability Tracker
+# IT General Controls (ITGC) Testing: Access Management and Change Management
 
 ## Project Description
 
-This project is a risk register tracking ten identified risks across vulnerability management, access control, segregation of duties, third-party risk, incident response, business continuity, data protection, and change management. Each risk is scored using a standard 5x5 likelihood/impact matrix, both before and after mitigation, and a Python script summarizes the register by risk rating band. This reflects the kind of risk tracking and prioritization a GRC analyst maintains to report risk posture to management and track remediation to closure.
+This project simulates an IT general controls audit over a company's financial ERP environment, covering user access management, periodic access review, change management, and segregation of duties. Using synthetic data and SQL, I designed and executed control tests, documented control objectives and test steps in workpaper format, and identified exceptions that would be reported to management. This reflects the type of testing performed in a SOX ITGC audit or an internal IT risk assessment.
 
-## Risk register
+## Scope
 
-**File:** [`risk_register.csv`](risk_register.csv)
+The audit covers four controls over a company's ERP system (AP, GL, and Procurement modules) and payroll system, based on a sample population of 16 users and 8 production changes over a two-month period.
 
-Each risk includes:
-
-- **Inherent risk** - likelihood and impact scored 1-5 before any mitigation, multiplied for an inherent risk score (1-25)
-- **Mitigation** - the action being taken or planned to reduce the risk
-- **Residual risk** - likelihood and impact re-scored assuming the mitigation is fully in place, giving a residual risk score
-- **Owner and target date** - who is accountable and when the mitigation is due
-- **Status** - Open, In Progress, or Closed
-
-## Scoring methodology
-
-Risk score = likelihood x impact, using a 1-5 scale for each, giving a score from 1 to 25. Scores are grouped into four rating bands:
-
-| Score range | Rating |
+| Data file | Description |
 |---|---|
-| 15-25 | Critical |
-| 10-14 | High |
-| 5-9 | Medium |
-| 1-4 | Low |
+| [`data/user_access_list.csv`](data/user_access_list.csv) | Active and terminated users, their role, access level, and last access review date |
+| [`data/dual_role_assignments.csv`](data/dual_role_assignments.csv) | Users holding more than one system role |
+| [`data/sod_conflict_matrix.csv`](data/sod_conflict_matrix.csv) | Role combinations considered a segregation of duties conflict |
+| [`data/change_management_log.csv`](data/change_management_log.csv) | Production changes, requester, approver, approval date, and implementation date |
 
-This matches the likelihood/impact scoring approach commonly used in enterprise risk management and GRC platforms, where risk owners and remediation deadlines are tracked against each rated risk until it's closed or accepted.
+## Control 1: Timely Termination of Access
 
-## Summary script
+**Control objective:** Access to financial systems is removed timely upon termination.
 
-**File:** [`risk_summary.py`](risk_summary.py)
+**Test script:** [`scripts/01_terminated_user_access_test.sql`](scripts/01_terminated_user_access_test.sql)
 
-Run with:
+**Test steps:** Query the user access list for any record with a termination date populated where the account status still shows Active.
 
-```
-python3 risk_summary.py
-```
+**Result:** 2 exceptions identified.
 
-The script reads the register and reports:
+| user_id | user_name | termination_date | account_status |
+|---|---|---|---|
+| U1003 | R. Foster | 2026-05-15 | Active |
+| U1010 | B. Kessler | 2026-06-02 | Active |
 
-- How many risks fall into each rating band, before and after mitigation
-- The shift in overall risk posture once planned mitigations are complete (in this register, inherent risk shows 3 Critical and 4 High risks, dropping to 0 Critical and 2 High residual risks once mitigations land)
-- A callout list of any risk still Open or In Progress that is rated Critical or High, which is what a risk owner or auditor would prioritize first
+**Conclusion:** Control did not operate effectively. Two terminated employees retained active system access at the time of testing, representing unauthorized access risk to the AP module.
 
-## Connection to other projects
+## Control 2: Periodic Access Review
 
-Three risks in this register (R-002 terminated user access, R-004 segregation of duties, R-010 change management approval) correspond directly to the exceptions identified in the [ITGC controls testing project](../itgc-controls-testing), showing how an audit finding flows into a tracked, owned, and dated remediation item rather than stopping at the finding itself.
+**Control objective:** User access is reviewed and recertified by department management at least semi-annually.
+
+**Test script:** [`scripts/02_stale_access_review_test.sql`](scripts/02_stale_access_review_test.sql)
+
+**Test steps:** Query active users whose last access review date is more than six months prior to the audit date (2026-06-15).
+
+**Result:** 2 exceptions identified (U1010, review dated 2025-11-01; U1016, review dated 2025-09-01).
+
+**Conclusion:** Control did not operate effectively for all users in the population. Recommend management complete overdue reviews and reinforce the review cadence.
+
+## Control 3: Change Management Approval
+
+**Control objective:** All production changes require independent approval prior to implementation, and no individual approves their own change.
+
+**Test script:** [`scripts/03_unapproved_change_test.sql`](scripts/03_unapproved_change_test.sql)
+
+**Test steps:** Query the change log for changes missing an approver or approval date, changes approved after they were already implemented, or changes where the requester and approver are the same person.
+
+**Result:** 4 exceptions identified.
+
+| change_id | issue |
+|---|---|
+| CH-2203 | Implemented with no approver or approval date on file |
+| CH-2206 | Approval date (2026-05-18) is after the implementation date (2026-05-14) |
+| CH-2207 | Implemented with no approver or approval date on file |
+| CH-2208 | Requester and approver are the same individual (self-approved) |
+
+**Conclusion:** Control did not operate effectively. Recommend enforcing a system-level control that blocks implementation until an independent approval is logged, and restricting users from approving their own change requests.
+
+## Control 4: Segregation of Duties
+
+**Control objective:** No single user holds two roles that together allow them to both initiate and complete a financial transaction without independent review.
+
+**Test script:** [`scripts/04_segregation_of_duties_test.sql`](scripts/04_segregation_of_duties_test.sql)
+
+**Test steps:** Join the dual-role assignment table against the segregation of duties conflict matrix to identify any user whose combination of roles is flagged as conflicting.
+
+**Result:** 1 exception identified.
+
+| user_id | user_name | primary_role | secondary_role | conflict_reason |
+|---|---|---|---|---|
+| U1016 | N. Castillo | AP Clerk | Purchasing Agent | Can create a purchase order and process the resulting payment, enabling fictitious vendor payments |
+
+**Conclusion:** Control did not operate effectively. Recommend removing the Purchasing Agent role from this user or implementing a compensating control, such as a supervisor review of all payments processed by users with dual AP/Procurement access.
 
 ## Summary
 
-This project tracks ten risks across common GRC domains using a standard likelihood/impact scoring matrix, capturing both inherent and residual risk alongside ownership and remediation deadlines. The accompanying script summarizes the register by rating band and surfaces which open risks carry the highest priority, the kind of reporting a GRC analyst would run ahead of a risk committee meeting or an audit status update.
-
-## Related project
-
-An Excel version of this register, with formulas, heat maps and a summary dashboard, is in [`risk-register-excel`](https://github.com/mmanzanares7/risk-register-excel).
+Across four ITGC tests covering access termination, periodic access review, change management approval, and segregation of duties, I identified exceptions in every control area: two terminated users with active access, two overdue access reviews, four change management approval gaps, and one segregation of duties conflict. Each finding was documented with the control objective, test steps, query used, and results, reflecting the workpaper format used in a SOX or internal ITGC audit, and each includes a recommendation a company could act on to remediate the underlying risk.
