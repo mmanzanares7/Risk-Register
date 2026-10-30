@@ -1,0 +1,5 @@
+role_a,role_b,conflict_reason
+AP Clerk,Purchasing Agent,Same person can create a purchase order and process the resulting payment, allowing fictitious vendor payments
+AP Clerk,AP Manager,Same person can process and approve payments, bypassing dual authorization
+GL Accountant,System Administrator,Same person can post journal entries and modify system access or audit logs
+Purchasing Agent,Purchasing Manager,Same person can create and approve purchase orders without independent review

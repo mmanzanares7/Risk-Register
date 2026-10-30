@@ -1,0 +1,17 @@
+user_id,user_name,department,role,access_level,account_status,termination_date,last_access_review
+U1001,J. Alvarez,Finance,AP Clerk,Standard,Active,,2026-06-01
+U1002,M. Chen,Finance,AP Manager,Elevated,Active,,2026-06-01
+U1003,R. Foster,Finance,AP Clerk,Standard,Active,2026-05-15,2026-03-01
+U1004,S. Patel,IT,System Administrator,Admin,Active,,2026-06-01
+U1005,K. Nguyen,Finance,GL Accountant,Standard,Active,,2026-06-01
+U1006,D. Brooks,Finance,GL Accountant,Elevated,Terminated,2026-04-30,2026-01-15
+U1007,L. Osei,Procurement,Purchasing Agent,Standard,Active,,2026-06-01
+U1008,T. Whitfield,Procurement,Purchasing Manager,Elevated,Active,,2026-05-01
+U1009,A. Romero,IT,Database Administrator,Admin,Active,,2026-06-01
+U1010,B. Kessler,Finance,AP Clerk,Standard,Active,2026-06-02,2025-11-01
+U1011,C. Delgado,Finance,GL Accountant,Standard,Active,,2026-06-01
+U1012,E. Hartman,Procurement,Purchasing Agent,Standard,Terminated,2026-05-20,2026-02-01
+U1013,F. Ibarra,IT,Help Desk,Standard,Active,,2026-06-01
+U1014,G. Larkin,Finance,AP Manager,Elevated,Active,,2026-03-01
+U1015,H. Moreau,Procurement,Purchasing Agent,Elevated,Active,,2026-06-01
+U1016,N. Castillo,Finance,AP Clerk,Standard,Active,,2025-09-01
